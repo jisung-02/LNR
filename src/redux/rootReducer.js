@@ -1,14 +1,17 @@
-import { combineReducers } from "redux";
-import showWindowReducer from "./reducer/showWindowReducer";
-import changePageReducer from "./reducer/changePageReducer";
-import codeTextReducer from "./reducer/codeTextReducer";
-import imageReducer from "./reducer/imgReducer";
+import { combineReducers } from 'redux';
+import changePageReducer from './reducer/changePageReducer';
+import codeTextReducer from './reducer/codeTextReducer';
+import imageReducer from './reducer/imgReducer';
 
-const rootReducer = combineReducers({
-    showWindow: showWindowReducer,
-    changePage: changePageReducer,
-    photoData: codeTextReducer,
-    image: imageReducer,
-})
+const combinedReducer = combineReducers({
+  changePage: changePageReducer,
+  photoData: codeTextReducer,
+  image: imageReducer,
+});
 
-export default rootReducer;
+export default function rootReducer(state, action) {
+  return combinedReducer(
+    action.type === 'RESET_SESSION' ? undefined : state,
+    action,
+  );
+}
