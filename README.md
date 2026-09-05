@@ -1,70 +1,76 @@
-# Getting Started with Create React App
+# 사랑에 은퇴는 없다 (LNR)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+사진과 삐삐 숫자 암호로 메시지를 만드는 React 앱입니다. 원본 저장소에는 프런트엔드만 있으며, 사진 처리·프린터·삐삐 장비 서버는 포함되어 있지 않습니다.
 
-## Available Scripts
+## 로컬 실행
 
-In the project directory, you can run:
+Node.js 22.22.2 이상(22.x), 24.15.0 이상(24.x), 또는 26 이상이 필요합니다. 이 작업에서는 Node.js 26.8.1에서 검증했습니다.
 
-### `npm start`
+```sh
+npm ci
+npm start
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+터미널에 표시된 로컬 주소를 여세요(기본 `http://127.0.0.1:5173`). 기본값은 **로컬 미리보기 모드**입니다. 카메라 권한이 없거나 장비가 없어도 **예시 사진으로 계속**을 눌러 전체 흐름을 확인할 수 있습니다. 미리보기는 브라우저 안에서만 처리하며, 실제 인쇄나 삐삐 전송을 하지 않습니다. 실제 장비가 만드는 이미지와 출력 형태가 다를 수 있습니다.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+카메라 촬영은 `localhost`/`127.0.0.1` 또는 HTTPS에서 동작합니다. 휴대전화에서 일반 HTTP LAN 주소로 접속하면 카메라가 제한될 수 있으므로 예시 사진을 사용하거나 HTTPS를 구성하세요. 촬영은 3초 카운트다운 뒤 진행됩니다. 뒤로 가거나 창을 닫으면 카메라와 타이머를 정리하고, 처음으로 돌아가면 사진과 암호를 삭제합니다.
 
-### `npm test`
+## 자주 쓰는 명령
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+| 명령                                      | 용도                                |
+| ----------------------------------------- | ----------------------------------- |
+| `npm start` / `npm run dev`               | 로컬 개발 서버                      |
+| `npm run build`                           | `dist/`에 배포용 파일 생성          |
+| `npm run preview`                         | 빌드 결과 로컬 확인(기본 4173 포트) |
+| `npm test` / `npm run test:watch`         | 회귀 테스트 실행 / 감시 모드        |
+| `npm run test:e2e`                        | 데스크톱·모바일 Chromium 흐름 검사  |
+| `npm run lint`                            | 코드 정적 검사                      |
+| `npm run format` / `npm run format:check` | 포맷 적용 / 검사                    |
 
-### `npm run build`
+개발 구조, 환경 설정, 문제 해결은 [개발 및 운영 가이드](docs/DEVELOPMENT.md), 이번 변경 내역은 [변경 이력](CHANGELOG.md)을 참고하세요.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 장비 연결
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```sh
+cp .env.example .env.local
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+`.env.local`에서 아래처럼 설정한 뒤 개발 서버를 재시작하세요.
 
-### `npm run eject`
+```dotenv
+VITE_DEVICE_MODE=hardware
+VITE_API_URL=http://localhost:8000
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+기존 서버 계약을 유지합니다.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+| 경로              | 요청                                                                | 응답                                                 |
+| ----------------- | ------------------------------------------------------------------- | ---------------------------------------------------- |
+| `/process-image/` | POST JSON `{ "file": "접두사 없는 base64 사진", "number": "0124" }` | JSON `{ "output_image": "접두사 없는 base64 JPEG" }` |
+| `/print/`         | GET                                                                 | 성공 HTTP 상태                                       |
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+서버는 프런트엔드의 origin에 대해 CORS를 허용해야 합니다. 요청 제한 시간은 15초이며 실패 시 현재 화면에서 오류와 재시도를 제공합니다. 인쇄 성공 응답은 **요청 수락**으로만 표시하며 물리적 출력 완료를 의미하지 않습니다. 인쇄는 자동으로 재시도하지 않습니다. 타임아웃 후 재시도하기 전 장비 출력 여부를 확인하세요. 기존 `/print/`는 작업 ID 없는 전역 인쇄 API이므로 장비 모드는 한 세션씩 사용해야 합니다.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+별도 삐삐 전송 API는 원본 프런트엔드에서 확인되지 않았습니다. 장비의 실제 출력·전송 및 서버 내부 동작은 장비가 연결된 환경에서 확인해야 합니다. 환경 변수에는 비밀 키를 넣지 마세요(`VITE_` 변수는 브라우저 번들에 포함됩니다).
 
-## Learn More
+## 검증
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```sh
+npm run lint
+npm test
+npm run build
+npx playwright install chromium
+npm run test:e2e
+npm audit
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+회귀 테스트는 부연 설명이 없는 암호, 앞자리 0, 잘못된 사전 조회, 늦게 도착하는 카메라 스트림 정리, 중복 요청·실패 응답·재시도·초기화를 확인합니다. 브라우저 테스트는 데스크톱과 모바일 크기에서 미리보기 흐름, 가로 넘침, 카메라 거부와 촬영 취소를 검증합니다. 장비 요청 테스트는 서버 응답을 모의 처리합니다.
 
-### Code Splitting
+## 정리 내용
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Create React App → Vite, React 및 남은 의존성 최신화.
+- 고정 SVG 컨테이너와 인라인 빈 공간 레이아웃 → 반응형 HTML/CSS.
+- 마우스 누름/뗌 이벤트 → 키보드·터치로도 동작하는 버튼과 폼.
+- DOM 직접 수정, 디버그 로그, 사용하지 않는 컴포넌트·상태·패키지 제거.
+- API 설정 분리, 실패 처리, 중복 요청 방지, 카메라·타이머 정리.
+- 기존 이미지·폰트 원본은 재사용할 수 있도록 보존.
